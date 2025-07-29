@@ -15,12 +15,12 @@ import { PrismaService } from 'src/Database/prisma.service';
 @Injectable()
 export class AuthService {
 
-    constructor (
+    constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly redisService: RedisService,
         private readonly mailerService: MailerService
-    ) {}
+    ) { }
 
 
     private async generateToken(payload: JwtPayload, AccsesTokenOnly = false) {
@@ -114,4 +114,111 @@ export class AuthService {
 
         return { success: true, message: 'Password succes updated' }
     }
+    async googleCallback(user: {
+    sub: string;
+    email: string;
+    name: string;
+    picture?: string;
+    accessToken: string;
+    refreshToken?: string;
+}) {
+    const { sub: googleId, email, name, picture, accessToken, refreshToken } = user;
+
+    if (!email) {
+        throw new UnauthorizedException('Google profilida email yo‘q');
+    }
+
+    let userData = await this.prisma.user.findUnique({
+        where: { email },
+    });
+
+    if (!userData) {
+        userData = await this.prisma.user.create({
+            data: {
+                email,
+                fullName: name,
+                avatar: picture,
+                password: null,
+                phone: null,
+                about: null,
+                location: null,
+                headline: null,
+                website: null,
+                role: 'USER',
+            },
+        });
+
+        await this.prisma.oAuthAccount.create({
+            data: {
+                provider: 'google',
+                providerUserId: googleId,
+                userId: userData.id,
+                accessToken,
+                refreshToken,
+            },
+        });
+    } else {
+        const existingOAuth = await this.prisma.oAuthAccount.findFirst({
+            where: {
+                provider: 'google',
+                providerUserId: googleId,
+                userId: userData.id,
+            },
+        });
+
+        if (!existingOAuth) {
+            await this.prisma.oAuthAccount.create({
+                data: {
+                    provider: 'google',
+                    providerUserId: googleId,
+                    userId: userData.id,
+                    accessToken,
+                    refreshToken,
+                },
+            });
+        } else {
+            await this.prisma.oAuthAccount.update({
+                where: {
+                    provider_providerUserId: {
+                        provider: 'google',
+                        providerUserId: googleId,
+                    },
+                },
+                data: {
+                    accessToken,
+                    refreshToken,
+                },
+            });
+        }
+    }
+
+    const access_token = await this.jwtService.signAsync({
+        userId: userData.id,
+        role: userData.role,
+    });
+
+    const refresh_token = await this.jwtService.signAsync(
+        {
+            userId: userData.id,
+            role: userData.role,
+        },
+        { expiresIn: '30d' }
+    );
+
+    const safeUser = {
+        id: userData.id,
+        fullName: userData.fullName,
+        email: userData.email,
+        avatar: userData.avatar,
+        role: userData.role,
+    };
+
+    return {
+        message: userData ? 'Login successful' : 'Registration successful',
+        access_token,
+        refresh_token,
+        user: safeUser,
+    };
+}
+
 }
