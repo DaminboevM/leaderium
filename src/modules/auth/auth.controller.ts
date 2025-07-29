@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.do';
@@ -6,7 +6,8 @@ import { VerificationDto } from './dto/verification.dto';
 import { TokenDto } from './dto/token.dto';
 import { SendVerifyDto } from './dto/send-veify.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -59,4 +60,45 @@ export class AuthController {
     resetPassword(@Body() payload: ResetPasswordDto) {
         return this.authService.resetPassword(payload);
     }
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    @ApiOperation({ summary: 'Google orqali autentifikatsiya boshlash' })
+    @ApiResponse({ status: 200, description: 'Google auth ga yo‘naltiriladi' })
+    async googleAuth() {
+        // Bu route faqat Google'ga yo'naltiradi, hech nima qilish shart emas
+    }
+
+    @Get('google/callback')
+    @UseGuards(AuthGuard('google'))
+    async googleAuthRedirect(@Req() req) {
+        try {
+            const {
+                googleId,
+                email,
+                fullName,
+                avatar,
+                accessToken,
+                refreshToken,
+            } = req.user;
+
+            if (!email || !googleId) {
+                throw new UnauthorizedException('Invalid Google profile');
+            }
+
+            const userPayload = {
+                sub: googleId,
+                email,
+                name: fullName,
+                avatar: avatar,
+                accessToken,
+                refreshToken,
+            };
+
+            return this.authService.googleCallback(userPayload);
+        } catch (err) {
+            console.error('Google auth error:', err);
+            throw new UnauthorizedException('Google auth failed');
+        }
+    }
+
 }

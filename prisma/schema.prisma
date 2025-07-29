@@ -32,51 +32,50 @@ enum NotificationType {
 
 // Foydalanuvchi profili
 model User {
-  id           Int       @id @default(autoincrement())
-  fullName     String
-  email        String    @unique
-  password     String?
-  phone        String?
-  about        String?
-  location     String?
-  role         Role      @default(USER)
-  avatar       String?
-  headline     String?
-  website      String?
-  createdAt    DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  email     String   @unique
+  password  String?
+  phone     String?
+  about     String?
+  location  String?
+  role      Role     @default(USER)
+  avatar    String?
+  headline  String?
+  website   String?
+  createdAt DateTime @default(now())
 
-  experiences  Experience[]
-  educations   Education[]
-  skills       Skill[]
-  sentRequests Connection[] @relation("SentRequests")
-  receivedRequests Connection[] @relation("ReceivedRequests")
-  notifications Notification[]
-  messagesSent  Message[] @relation("MessagesSent")
-  messagesRecv  Message[] @relation("MessagesRecv")
-  jobs          Job[]
-  applications  JobApplication[]
+  experiences      Experience[]
+  educations       Education[]
+  skills           Skill[]
+  sentRequests     Connection[]     @relation("SentRequests")
+  receivedRequests Connection[]     @relation("ReceivedRequests")
+  notifications    Notification[]
+  messagesSent     Message[]        @relation("MessagesSent")
+  messagesRecv     Message[]        @relation("MessagesRecv")
+  jobs             Job[]
+  applications     JobApplication[]
+  OAuthAccount     OAuthAccount[]
 }
-
 
 // Tajriba
 model Experience {
-  id        Int     @id @default(autoincrement())
-  userId    Int
-  title     String
-  company   String
-  location  String?
-  startDate DateTime
-  endDate   DateTime?
-  current   Boolean @default(false)
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  title       String
+  company     String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean   @default(false)
   description String?
 
-  user      User    @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
-
 
 // Ma’lumot (ta’lim)
 model Education {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   userId      Int
   school      String
   degree      String
@@ -85,45 +84,41 @@ model Education {
   endDate     DateTime?
   description String?
 
-  user        User    @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
-
 
 // Ko‘nikmalar
 model Skill {
-  id       Int    @id @default(autoincrement())
-  userId   Int
-  name     String
-  user     User   @relation(fields: [userId], references: [id])
+  id     Int    @id @default(autoincrement())
+  userId Int
+  name   String
+  user   User   @relation(fields: [userId], references: [id])
 }
-
 
 // Foydalanuvchi aloqalari (Connect/Friend Request)
 model Connection {
-  id         Int               @id @default(autoincrement())
+  id         Int              @id @default(autoincrement())
   senderId   Int
   receiverId Int
-  status     ConnectionStatus  @default(PENDING)
-  createdAt  DateTime          @default(now())
+  status     ConnectionStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
 
-  sender     User              @relation("SentRequests", fields: [senderId], references: [id])
-  receiver   User              @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  sender   User @relation("SentRequests", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id])
 }
-
 
 // Xabarlar (Chat)
 model Message {
-  id          Int      @id @default(autoincrement())
-  senderId    Int
-  receiverId  Int
-  content     String
-  read        Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-  sender      User     @relation("MessagesSent", fields: [senderId], references: [id])
-  receiver    User     @relation("MessagesRecv", fields: [receiverId], references: [id])
+  sender   User @relation("MessagesSent", fields: [senderId], references: [id])
+  receiver User @relation("MessagesRecv", fields: [receiverId], references: [id])
 }
-
 
 // Ish e’lonlari
 model Job {
@@ -135,10 +130,9 @@ model Job {
   description String
   createdAt   DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id])
+  user         User             @relation(fields: [userId], references: [id])
   applications JobApplication[]
 }
-
 
 // Ish arizalari
 model JobApplication {
@@ -148,10 +142,9 @@ model JobApplication {
   message   String?
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  job       Job      @relation(fields: [jobId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  job  Job  @relation(fields: [jobId], references: [id])
 }
-
 
 // Bildirishnomalar
 model Notification {
@@ -162,7 +155,18 @@ model Notification {
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
-  user      User             @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
+model OAuthAccount {
+  id             Int     @id @default(autoincrement())
+  user           User    @relation(fields: [userId], references: [id])
+  userId         Int
+  provider       String
+  providerUserId String
+  accessToken    String?
+  refreshToken   String?
 
+  @@unique([provider, providerUserId])
+  @@index([provider, providerUserId])
+}
