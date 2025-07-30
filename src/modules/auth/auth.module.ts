@@ -6,10 +6,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtAccsesToken } from 'src/common/config/jwt/jwt';
 import { RedisModule } from 'src/common/config/redis/redis.module';
 import { MailerModule } from 'src/common/config/mailer/mailer.module';
+import { GoogleStrategy } from './strategy';
 
 @Module({
   imports: [PrismaModule, JwtModule.register(JwtAccsesToken), MailerModule, RedisModule],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [AuthService,GoogleStrategy]
 })
 export class AuthModule {}
