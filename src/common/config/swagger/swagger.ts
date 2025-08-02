@@ -3,7 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
-    .setTitle('HairCut - Barber Booking & Services API')
+    .setTitle('Leadreium Api')
     .setVersion('1.0')
     .addTag('Auth')
     .addBearerAuth() 
